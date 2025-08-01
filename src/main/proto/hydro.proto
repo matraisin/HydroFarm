@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.hydrofarm.grpc";
+option java_outer_classname = "HydroProto";
+
+service HydroService {
+  // Streaming sensor data every 5 seconds
+  rpc StreamSensorData(Empty) returns (stream SensorData);
+
+  // Trigger emergency irrigation shutdown
+  rpc EmergencyShutdown(Empty) returns (ShutdownResponse);
+}
+
+message Empty {}
+
+message SensorData {
+  string timestamp = 1;
+  float temperature = 2;
+  float humidity = 3;
+  float pH = 4;
+}
+
+message ShutdownResponse {
+  string status = 1;
+}
+
+
+// --- Greenhouse Environmental Monitoring ---
+
+service EnvironmentService {
+  rpc StreamEnvironmentData(Empty) returns (stream EnvironmentData);
+}
+
+message EnvironmentData {
+  string timestamp = 1;
+  float temperature = 2;
+  float humidity = 3;
+  float co2 = 4;
+}
+
+
+// --- Pest and Strain Monitoring ---
+
+service PestService {
+  rpc StreamPestData(Empty) returns (stream PestData);
+}
+
+message PestData {
+  string timestamp = 1;
+  int32 pestLevel = 2;       // 0–100 scale
+  int32 strainHealth = 3;    // 0–100 scale
+}
+
+// --- Storage and Pump Monitoring ---
+service StorageService {
+  rpc StreamStorageData(Empty) returns (stream StorageData);
+}
+
+message StorageData {
+  string timestamp = 1;
+  float capacityPercent = 2;   // 0–100% full
+  string pumpStatus = 3;       // "ON" / "OFF"
+}
