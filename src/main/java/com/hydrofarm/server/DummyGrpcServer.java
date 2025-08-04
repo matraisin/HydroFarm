@@ -21,14 +21,6 @@ public class DummyGrpcServer {
 
     public void start() throws IOException, InterruptedException {
         server = ServerBuilder.forPort(9090)
-                //Pull hydro data
-                .addService(new HydroServiceImpl())
-                //pull temp humidity etc data
-                .addService(new EnvironmentServiceImpl())
-                //Roll in pest controll
-                .addService(new PestServiceImpl())
-                //add storage part
-                .addService(new StorageServiceImpl())
 
                 .build()
                 .start();

@@ -4,7 +4,7 @@ import com.hydrofarm.grpc.*;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import com.hydrofarm.grpc.StorageData;
+
 
 import java.util.function.Consumer;
 
@@ -91,6 +91,7 @@ public class GrpcClient {
     }
 
 
+<<<<<<< HEAD
     //Add pest stream to service
     public void startPestStream(Consumer<PestData> onDataReceived) {
         PestServiceGrpc.PestServiceStub pestStub = PestServiceGrpc.newStub(channel);
@@ -136,4 +137,6 @@ public class GrpcClient {
 
 
 
+=======
+>>>>>>> eae4c1ead4da7d3bd54e70528f5d5bfea77dbf1e
 }

@@ -62,3 +62,54 @@ message StorageData {
   float capacityPercent = 2;   // 0–100% full
   string pumpStatus = 3;       // "ON" / "OFF"
 }
+
+// --- Nutrient Solution Monitor ---
+service NutrientMonitor {
+  rpc GetNutrientStatus(TankRequest) returns (NutrientData);           // Unary
+  rpc CalibrateSolution(CalibrationRequest) returns (stream CalibrationProgress); // Server streaming
+}
+
+message TankRequest {
+  string tank_id = 1; // e.g., UUID or tank name
+}
+
+message NutrientData {
+  float ph = 1;
+  float ec = 2;
+  int32 ppm = 3;
+}
+
+message CalibrationRequest {
+  string tank_id = 1;
+  float adjustment_volume = 2;
+}
+
+message CalibrationProgress {
+  string message = 1;
+  float current_ph = 2;
+}
+
+// --- Storage Management Service ---
+service StorageManager {
+  rpc CheckStorageAvailability(Empty) returns (StorageAvailability);   // Unary
+  rpc CheckStorageHealth(Empty) returns (StorageHealth);               // Unary
+  rpc ReserveStorage(StorageReservationRequest) returns (StorageResponse); // Unary with deadline
+}
+
+message StorageAvailability {
+  float capacity_percent = 1;
+}
+
+message StorageHealth {
+  float temperature = 1;
+  float humidity = 2;
+}
+
+message StorageReservationRequest {
+  string crop_type = 1;
+  int32 quantity = 2;
+}
+
+message StorageResponse {
+  string status = 1;
+}

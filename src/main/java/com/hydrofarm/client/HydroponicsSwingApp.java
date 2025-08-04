@@ -11,10 +11,17 @@ import com.hydrofarm.grpc.StorageData;
 
 
 public class HydroponicsSwingApp {
+    //Jframe
     private JFrame frame;
+    //Instanciate and declare client object
     private GrpcClient grpcClient;
+    //labels
     private JLabel pestLevelLabel, strainHealthLabel;
-    private JLabel storageLevelLabel, pumpStatusLabel;
+    private JLabel storageLevelLabel, pumpStatusLabel, airConditionLabel;
+    //flags for alerts to make them not spaming
+    private boolean pestAlertShown = false;
+    private boolean isShutdown = false;
+
 
 
     //Add tsyling to streammed data:
@@ -49,6 +56,9 @@ public class HydroponicsSwingApp {
         tabbedPane.addTab("Pests & Strains", createPestPanel());
         //Styorage tab
         tabbedPane.addTab("Storage", createStoragePanel());
+
+        //Shutdown button in hydro tab
+        tabbedPane.addTab("Emergency Button", createHydroPanel());
 
         //tabbedPane.addTab("Storage", createPlaceholder("Storage and pump system coming soon..."));
 
@@ -90,7 +100,8 @@ public class HydroponicsSwingApp {
         });
 
         buttonPanel.add(startButton);
-        buttonPanel.add(emergencyButton);
+        //remove button for now
+        //buttonPanel.add(emergencyButton);
 
         panel.add(dataPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
@@ -136,10 +147,19 @@ public class HydroponicsSwingApp {
     // Here we update mock data to view
     private void updateSensorUI(SensorData data) {
         SwingUtilities.invokeLater(() -> {
-            tempLabel.setText(String.format("Temperature: %.2f °C", data.getTemperature()));
+            float temperature = data.getTemperature();
+            if (temperature > 27.0f) {
+                tempLabel.setForeground(Color.RED);
+                tempLabel.setText(String.format("Temperature: %.2f °C (HIGH!)", temperature));
+            } else {
+                tempLabel.setForeground(Color.BLACK);
+                tempLabel.setText(String.format("Temperature: %.2f °C", temperature));
+            }
+
             ppmLabel.setText(String.format("PPM: %.2f", data.getHumidity())); // Using humidity as fake PPM for now
             phLabel.setText(String.format("pH: %.2f", data.getPH()));
         });
+
 
     }
 
@@ -177,10 +197,39 @@ public class HydroponicsSwingApp {
     //extra method for updating pest UI
     private void updatePestUI(PestData data) {
         SwingUtilities.invokeLater(() -> {
-            pestLevelLabel.setText("Pest Level: " + data.getPestLevel());
-            strainHealthLabel.setText("Strain Health: " + data.getStrainHealth());
+            int level = data.getPestLevel();
+            String pestLevelDesc;
+            if (level == 0) pestLevelDesc = "No pests";
+            else if (level <= 30) pestLevelDesc = "Low";
+            else if (level <= 70) pestLevelDesc = "Moderate";
+            else pestLevelDesc = "High";
+
+            pestLevelLabel.setText("Pest Level: " + pestLevelDesc);
+
+            // Alert only once unless level drops back
+            if (level > 70) {
+                pestLevelLabel.setForeground(Color.RED);
+                if (!pestAlertShown) {
+                    JOptionPane.showMessageDialog(null, "⚠️ High Pest Level Detected!", "Pest Alert", JOptionPane.WARNING_MESSAGE);
+                    pestAlertShown = true;
+                }
+            } else {
+                pestLevelLabel.setForeground(Color.BLACK);
+                pestAlertShown = false;  // reset when conditions return to normal
+            }
+
+            int health = data.getStrainHealth();
+            String strainHealthDesc;
+            if (health <= 30) strainHealthDesc = "Poor";
+            else if (health <= 70) strainHealthDesc = "Fair";
+            else strainHealthDesc = "Healthy";
+
+            strainHealthLabel.setText("Strain Health: " + strainHealthDesc);
         });
     }
+
+
+
 
 
 
@@ -192,12 +241,16 @@ public class HydroponicsSwingApp {
 
         storageLevelLabel = new JLabel("Storage Level: -- %");
         storageLevelLabel.setFont(bigFont);
-        pumpStatusLabel = new JLabel("Pump Status: --");
-        pumpStatusLabel.setFont(bigFont);
+//        pumpStatusLabel = new JLabel("Pump Status: --");
+//        pumpStatusLabel.setFont(bigFont);
+        airConditionLabel = new JLabel("AirCOn Status: --");
+        airConditionLabel.setFont(bigFont);
 
         JPanel dataPanel = new JPanel(new GridLayout(2, 1, 10, 10));
         dataPanel.add(storageLevelLabel);
-        dataPanel.add(pumpStatusLabel);
+        //dataPanel.add(pumpStatusLabel);
+        dataPanel.add(airConditionLabel);
+
 
         JButton startStorageButton = new JButton("Start Storage Stream");
         startStorageButton.addActionListener(e -> grpcClient.startStorageStream(this::updateStorageUI));
@@ -212,9 +265,47 @@ public class HydroponicsSwingApp {
     private void updateStorageUI(StorageData data) {
         SwingUtilities.invokeLater(() -> {
             storageLevelLabel.setText(String.format("Storage Level: %.2f %%", data.getCapacityPercent()));
-            pumpStatusLabel.setText("Pump Status: " + data.getPumpStatus());
+            airConditionLabel.setText("AirCon Status: " + data.getPumpStatus());
         });
     }
+
+
+
+
+    //Shut down method
+    private JPanel createHydroPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        JButton emergencyButton = new JButton("Emergency Shutdown");
+        emergencyButton.setFont(bigFont);
+        emergencyButton.setBackground(Color.RED);
+        emergencyButton.setForeground(Color.WHITE);
+        emergencyButton.setFocusPainted(false);
+
+        emergencyButton.addActionListener(e -> {
+            if (isShutdown) return;
+
+            // try call gRPC here next
+            // try {
+            //     String result = grpcClient.emergencyShutdown();
+            //     JOptionPane.showMessageDialog(null, result, "Shutdown", JOptionPane.INFORMATION_MESSAGE);
+            // } catch (Exception ex) {
+            //     JOptionPane.showMessageDialog(null, "Failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            //     return;
+            // }
+
+            // Simulate local state change
+            isShutdown = true;
+            emergencyButton.setText("System Turned Off");
+            emergencyButton.setEnabled(false);
+            emergencyButton.setBackground(Color.DARK_GRAY);
+            emergencyButton.setForeground(Color.LIGHT_GRAY);
+        });
+
+        panel.add(emergencyButton, BorderLayout.CENTER);
+        return panel;
+    }
+
 
 
 
